@@ -28,4 +28,4 @@ install -D -m755 cc-tmpfs_mounts.so %{buildroot}/%{_libdir}/slurm/cc-tmpfs_mount
 %files
 %{_libdir}/slurm/cc-tmpfs_mounts.so
 
-%changeloghh
+%changelog
