@@ -16,7 +16,7 @@
 #include <linux/fs.h>
 #include <slurm/spank.h>
 #include <sys/stat.h>
-//#include <linux/limits.h>
+#include <linux/limits.h>
 #include <unistd.h>
 #include <sched.h>
 #include <pwd.h>
@@ -62,15 +62,8 @@ int _tmpdir_init_prolog(spank_t sp, int ac, char **av);
 int unlink_cb(const char *fpath, const struct stat *sb, int typeflag, struct FTW *ftwbuf)
 {
     int rv;
-    stat(fpath, &st);
-    if(S_ISDIR(st.st_mode)) {
-        rv = rmdir(fpath);
-    }
-    else {
-        rv = remove(fpath);
-    }
 
-    if (rv) {
+    if ((rv = remove(fpath))) {
         perror(fpath);
     }
 
@@ -186,7 +179,25 @@ int slurm_spank_task_init(spank_t sp, int ac, char **av)
 
 int _tmpdir_task_init(spank_t sp, int ac, char **av)
 {
+        char cwd[PATH_MAX+1];
         char restartcount_s[6] = "";
+
+        // This basically does a `cd $(pwd)`
+        // The reason is that when we change /tmp to /tmp/$user.$jobid.$restarcount via bindmount
+        // if the user uses sbatch --chdir=/tmp or they launch their job via salloc or sbatch while in /tmp
+        // then it will cause them to exist in the real /tmp rather than the new bindmounted one, until they
+        // do a `cd /tmp` for example.  So `ls` would be different than `ls $(pwd)` in this case
+        // We fix it by doing a `cd $(pwd)` for them, as them, to ensure they land in the bindmounted location
+        // and makes sure that we actually clean up their job data at the end of the job rather than missing it.
+        if (getcwd(cwd, sizeof(cwd)) != NULL) {
+            if (chdir(cwd) != 0) {
+              slurm_error("cc-tmpfs_mounts: chdir() error");
+              return -1;
+            }
+        } else {
+            slurm_error("cc-tmpfs_mounts: getcwd() error");
+            return -1;
+        }
         sprintf(restartcount_s, "%u", restartcount);
         if(spank_setenv(sp, "SLURM_RESTART_COUNT", restartcount_s, 1) != ESPANK_SUCCESS) {
             slurm_error("cc-tmpfs_mounts: Unable to set job's SLURM_RESTART_COUNT env variable");
@@ -235,7 +246,7 @@ int _tmpdir_bind(spank_t sp, int ac, char **av)
                 slurm_error("cc-tmpfs_mounts: \"%s/%s.%d.%d\" too large. Aborting",bind_self[i],user->pw_name,jobid,restartcount);
                 return -1;
             }
-            slurm_debug("cc-tmpfs_mounts: mounting: %s %s", bind_self_full, bind_dirs[i]);
+            slurm_debug("cc-tmpfs_mounts: mounting: %s %s", bind_self_full, bind_self[i]);
             if(mount(bind_self_full, bind_self[i], "none", MS_BIND, NULL)) {
                 slurm_error("cc-tmpfs_mounts: failed to mount %s for job: %u, %m", bind_self[i], jobid);
                 return -1;
