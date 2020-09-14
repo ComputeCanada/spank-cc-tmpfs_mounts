@@ -88,19 +88,15 @@ int slurm_spank_job_prolog(spank_t sp, int ac, char **av)
 {
     int i;
 
-    slurm_debug("cc-tmpfs_mounts: slurm_spank_job_prolog: Entered");
     if(_tmpdir_init_prolog(sp,ac,av)) {
         return -1;
     }
-    slurm_debug("cc-tmpfs_mounts: slurm_spank_job_prolog: Checking for folder prior to mkdir: %s", bind_target_full);
     if(stat(bind_target_full, &st) == -1) {
-        slurm_debug("cc-tmpfs_mounts: slurm_spank_job_prolog: Making dir: %s", bind_target_full);
         if(mkdir(bind_target_full,0750)) {
             slurm_error("cc-tmpfs_mounts: mkdir(\"%s\",0750): %m", bind_target_full);
             return -1;
         }
     }
-    slurm_debug("cc-tmpfs_mounts: slurm_spank_job_prolog: Chown: %s", bind_target_full);
     if(chown(bind_target_full,uid,gid)) {
         slurm_error("cc-tmpfs_mounts: chown(%s,%u,%u): %m", bind_target_full,uid,gid);
         return -1;
@@ -113,15 +109,12 @@ int slurm_spank_job_prolog(spank_t sp, int ac, char **av)
                 slurm_error("cc-tmpfs_mounts: \"%s/%s.%d.%d\" too large. Aborting",bind_self[i],user->pw_name,jobid,restartcount);
                 return -1;
             }
-            slurm_debug("cc-tmpfs_mounts: slurm_spank_job_prolog: Checking for folder prior to mkdir: %s", bind_self_full);
             if(stat(bind_self_full, &st) == -1) {
-                slurm_debug("cc-tmpfs_mounts: slurm_spank_job_prolog: Making dir: %s", bind_self_full);
                 if(mkdir(bind_self_full,0750)) {
                     slurm_error("cc-tmpfs_mounts: mkdir(\"%s\",0750): %m", bind_self_full);
                     return -1;
                 }
             }
-            slurm_debug("cc-tmpfs_mounts: slurm_spank_job_prolog: Chown: %s", bind_self_full);
             if(chown(bind_self_full,uid,gid)) {
                 slurm_error("cc-tmpfs_mounts: chown(%s,%u,%u): %m", bind_self_full,uid,gid);
                 return -1;
@@ -220,7 +213,6 @@ int _tmpdir_task_init(spank_t sp, int ac, char **av)
 int _tmpdir_bind(spank_t sp, int ac, char **av)
 {
     int i;
-    slurm_debug("cc-tmpfs_mounts: _tmpdir_bind: Entered");
 
     // only on cluster nodes
     if(!spank_remote(sp)) {
@@ -262,14 +254,12 @@ int _tmpdir_bind(spank_t sp, int ac, char **av)
         }
     }
 
-    slurm_debug("cc-tmpfs_mounts: _tmpdir_bind: Exiting");
     return 0;
 }
 
 int _tmpdir_tmpfs(spank_t sp, int ac, char **av)
 {
     int i;
-    slurm_debug("cc-tmpfs_mounts: _tmpdir_tmpfs: Entered");
 
     // only on cluster nodes
     if(!spank_remote(sp)) {
@@ -289,21 +279,18 @@ int _tmpdir_tmpfs(spank_t sp, int ac, char **av)
     }
 
     // Make / share (propagate) mounts (same as mount --make-rshared /)
-    slurm_debug("cc-tmpfs_mounts: _tmpdir_tmpfs: mount --make-rshared /");
     if(mount("", "/", "notapplicable", MS_REC|MS_SHARED, "")) {
         slurm_error("cc-tmpfs_mounts: failed to 'mount --make-rshared /' for job: %u, %m", jobid);
         return -1;
     }
 
     // Create our own namespace
-    slurm_debug("cc-tmpfs_mounts: _tmpdir_tmpfs: unshare clone_newns");
     if(unshare(CLONE_NEWNS)) {
         slurm_error("cc-tmpfs_mounts: failed to unshare mounts for job: %u, %m", jobid);
         return -1;
     }
 
     // Make / slave (same as mount --make-rslave /)
-    slurm_debug("cc-tmpfs_mounts: _tmpdir_tmpfs: mount --make-rslave /");
     if(mount("", "/", "notapplicable", MS_REC|MS_SLAVE, "")) {
             slurm_error("cc-tmpfs_mounts: failed to 'mount --make-rslave /' for job: %u, %m", jobid);
             return -1;
@@ -319,13 +306,11 @@ int _tmpdir_tmpfs(spank_t sp, int ac, char **av)
         }
     }
 
-    slurm_debug("cc-tmpfs_mounts: _tmpdir_tmpfs: Exiting");
     return 0;
 }
 
 int _tmpdir_init_prolog(spank_t sp, int ac, char **av)
 {
-    slurm_debug("cc-tmpfs_mounts: _tmpdir_init_prolog: Entered");
     if(_tmpdir_init_opts(sp,ac,av)) {
         return 0;
     }
@@ -369,7 +354,6 @@ int _tmpdir_init_prolog(spank_t sp, int ac, char **av)
         return -1;
     }
 
-    slurm_debug("cc-tmpfs_mounts: _tmpdir_init_prolog: Exiting");
     return 0;
 }
 
