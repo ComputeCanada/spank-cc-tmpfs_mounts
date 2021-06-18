@@ -24,7 +24,7 @@ Requires:       libselinux
 %setup -q
 
 %build
-CPPFLAGS="-I%{_prefix}/include" make %{?with_static:WITH_SELINUX=1}
+CPPFLAGS="-I%{_prefix}/include" make %{?with_selinux:WITH_SELINUX=1}
 
 %install
 install -D -m755 cc-tmpfs_mounts.so %{buildroot}/%{_libdir}/slurm/cc-tmpfs_mounts.so
