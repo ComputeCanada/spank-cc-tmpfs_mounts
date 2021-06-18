@@ -14,7 +14,7 @@ BuildRequires:  slurm-devel
 Requires:       slurm-slurmd
 
 %if %{with selinux}
-BuildRequires:  selinux-devel
+BuildRequires:  libselinux-devel
 Requires:       libselinux
 %endif
 
