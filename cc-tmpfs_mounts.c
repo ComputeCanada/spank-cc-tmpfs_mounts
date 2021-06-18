@@ -23,6 +23,11 @@
 #include <pwd.h>
 #include <ftw.h>
 
+#ifdef WITH_SELINUX
+#include <selinux/selinux.h>
+#define TMPFS_SELINUX_CONTEXT "user_u:object_r:user_tmp_t:s0"
+#endif
+
 SPANK_PLUGIN (cc-tmpfs_mounts, 1);
 
 // Default
@@ -119,6 +124,11 @@ int slurm_spank_job_prolog(spank_t sp, int ac, char **av)
             slurm_error("cc-tmpfs_mounts: mkdir(\"%s\",0750): %m", bind_target_full);
             return -1;
         }
+#ifdef WITH_SELINUX
+        if(setfilecon(bind_target_full, TMPFS_SELINUX_CONTEXT)) {
+            slurm_debug("cc-tmpfs_mounts: Unable to set %s SELinux context", bind_target_full);
+        }
+#endif
     }
     if(chown(bind_target_full,uid,gid)) {
         slurm_error("cc-tmpfs_mounts: chown(%s,%u,%u): %m", bind_target_full,uid,gid);
@@ -137,6 +147,11 @@ int slurm_spank_job_prolog(spank_t sp, int ac, char **av)
                     slurm_error("cc-tmpfs_mounts: mkdir(\"%s\",0750): %m", bind_self_full);
                     return -1;
                 }
+#ifdef WITH_SELINUX
+                if(setfilecon(bind_self_full, TMPFS_SELINUX_CONTEXT)) {
+                    slurm_debug("cc-tmpfs_mounts: Unable to set %s SELinux context", bind_self_full);
+                }
+#endif
             }
             if(chown(bind_self_full,uid,gid)) {
                 slurm_error("cc-tmpfs_mounts: chown(%s,%u,%u): %m", bind_self_full,uid,gid);

@@ -11,6 +11,10 @@ Source:         spank-cc-tmpfs_mounts-%{version}.tar.gz
 BuildRequires:  slurm-devel
 Requires:       slurm-slurmd
 
+%if %{with selinux}
+BuildRequires:  selinux-devel
+Requires:       libselinux
+%endif
 
 %global _prefix /opt/software/slurm
 %define debug_package %{nil}
@@ -20,7 +24,7 @@ Requires:       slurm-slurmd
 %setup -q
 
 %build
-CPPFLAGS="-I%{_prefix}/include" make
+CPPFLAGS="-I%{_prefix}/include" make %{?with_static:WITH_SELINUX=1}
 
 %install
 install -D -m755 cc-tmpfs_mounts.so %{buildroot}/%{_libdir}/slurm/cc-tmpfs_mounts.so
