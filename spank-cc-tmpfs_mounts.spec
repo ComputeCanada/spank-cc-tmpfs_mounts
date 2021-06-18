@@ -8,6 +8,8 @@ License:        MIT
 URL:            https://github.com/ComputeCanada/spank-cc-tmpfs_mounts
 Source:         spank-cc-tmpfs_mounts-%{version}.tar.gz
 
+%bcond_with selinux
+
 BuildRequires:  slurm-devel
 Requires:       slurm-slurmd
 
