@@ -207,6 +207,10 @@ int _tmpdir_task_init(spank_t sp, int ac, char **av)
             slurm_error("cc-tmpfs_mounts: Unable to set job's SLURM_TMPDIR env variable");
             return -1;
         }
+        if(spank_setenv(sp, "XDG_RUNTIME_DIR", bind_target_full, 1) != ESPANK_SUCCESS) {
+            slurm_error("cc-tmpfs_mounts: Unable to set job's XDG_RUNTIME_DIR env variable");
+            return -1;
+        }
         return 0;
 }
 
