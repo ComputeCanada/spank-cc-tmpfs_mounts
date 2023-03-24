@@ -15,6 +15,7 @@
 #include <sys/mount.h>
 #include <linux/fs.h>
 #include <slurm/spank.h>
+#include <slurm/slurm.h>
 #include <sys/stat.h>
 #include <linux/limits.h>
 #include <unistd.h>
@@ -84,6 +85,28 @@ int slurm_spank_init(spank_t sp, int ac, char **av)
     return _tmpdir_init_opts(sp,ac,av);
 }
 
+int slurm_spank_init_post_opt(spank_t sp, int ac, char **av)
+{
+    if (!spank_remote(sp)) {
+        return 0;
+    }
+
+    uint32_t stepid;
+    if (spank_get_item(sp, S_JOB_STEPID, &stepid) != ESPANK_SUCCESS) {
+        /* if unable to obtain stepid then don't handle */
+        slurm_error("cc-tmpfs_mounts: spank_get_item( S_JOB_STEPID ) failed");
+        return 0;
+    }
+
+    if (stepid > SLURM_MAX_NORMAL_STEP_ID && stepid != SLURM_BATCH_SCRIPT && stepid != SLURM_INTERACTIVE_STEP) {
+        /* only handle 'batch', 'interactive', or 'regular' step, not 'extern', or 'pending' */
+        return 0;
+    }
+
+    _tmpdir_tmpfs(sp,ac,av);
+    return _tmpdir_bind(sp,ac,av);
+}
+
 int slurm_spank_job_prolog(spank_t sp, int ac, char **av)
 {
     int i;
@@ -121,6 +144,7 @@ int slurm_spank_job_prolog(spank_t sp, int ac, char **av)
             }
         }
     }
+    // this _tmpdir_tmpfs call is local, won't do anything
     return _tmpdir_tmpfs(sp,ac,av);
 }
 
@@ -168,6 +192,8 @@ int slurm_spank_local_user_init(spank_t sp, int ac, char **av)
 
 int slurm_spank_task_init_privileged(spank_t sp, int ac, char **av)
 {
+    // should be unnecessary after slurm_spank_init_post_opt, kept just
+    // in case
     _tmpdir_tmpfs(sp,ac,av);
     return _tmpdir_bind(sp,ac,av);
 }
