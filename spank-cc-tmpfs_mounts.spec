@@ -1,5 +1,5 @@
 Name:           spank-cc-tmpfs_mounts
-Version:        1.2
+Version:        1.3
 Release:        1%{?dist}
 Summary:        SPANK plugin to create in-memory, in-cgroup private tmpfs mounts per each job of users.
 
